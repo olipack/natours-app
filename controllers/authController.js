@@ -35,6 +35,10 @@ const createSendToken = (user, statusCode, res) => {
   })
 }
 
+
+/////////////////////
+/// Signup & Login
+
 exports.signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
     name: req.body.name,
@@ -64,6 +68,9 @@ exports.login = catchAsync(async (req, res, next) => {
   // 3) I everything ok, send token to client
   createSendToken(user, 200, res)
 })
+
+/////////////////////////////////
+/// Check if user is logged in
 
 exports.protect = catchAsync(async (req, res, next) => {
   // 1) Getting token and check if it exists
@@ -107,6 +114,9 @@ exports.protect = catchAsync(async (req, res, next) => {
   next()
 })
 
+/////////////////////////////////
+/// Check if user has permission
+
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role))
@@ -116,6 +126,9 @@ exports.restrictTo = (...roles) => {
     next()
   }
 }
+
+//////////////////////////////
+/// Forgot and reset password
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on POSTed email
@@ -183,6 +196,9 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   // 4) Log the user in, send JWT
   createSendToken(user, 200, res)
 })
+
+/////////////////////
+/// Update password
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
   // 1) Get user from collection

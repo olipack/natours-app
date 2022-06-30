@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const slugify = require('slugify')
+// const User = require('./userModel')  *not required for child referencing
 
 const tourSchema = new mongoose.Schema(
   {
@@ -76,7 +77,37 @@ const tourSchema = new mongoose.Schema(
     secretTour: {
       type: Boolean,
       default: false
-    }
+    },
+    startLocation: {
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point']
+      },
+      coordinates: [Number],
+      address: String,
+      description: String
+    },
+    locations: [
+      {
+        type:{
+          type: String,
+          default: 'Point',
+          enum: ['Point']
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number
+      }
+    ],
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User'
+      }
+    ]
+    // in tourCountroler: const tour = await Tour.findById(req.params.id).populate('guides')
   },
   {
     toJSON: { virtuals: true },
@@ -88,29 +119,48 @@ tourSchema.virtual('durationWeeks').get(function() {
   return this.duration / 7
 })
 
-// DOCUMENT MIDDLEWARE
-// * runs before the .save() and .create(); does NOT work with update!
+// Virtual populate: keep a reference to all the child documents (reviews) on the parent document (tour) without persisting that information to the database
+
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id'
+})
+
+////////////////////////
+/// DOCUMENT MIDDLEWARE  *runs before the .save() and .create(); does NOT work with update!
+
 tourSchema.pre('save', function(next) {
   this.slug = slugify(this.name, { lower: true })
   next()
 })
 
-// tourSchema.pre('save', function(next) {
-//   console.log('Will save document...')
+// EMBEDDEDING USERS INTO TOURS
+// * in tourSchema: guides: Array
+// * if we update a user we'd need a functions that updates the user data in all tour documents
+
+// tourSchema.pre('save', async function(next) {
+//   const guidesPromises = this.guides.map(async id => await User.findById(id))
+//   this.guides = await Promise.all(guidesPromises)
 //   next()
 // })
 
-// tourSchema.post('save', function(doc, next) {
-//   console.log(doc)
-//   next()
-// })
 
-// QUERY MIDDLEWARE
-// * runs before any query
-// * the 'this' keyword points at current query
+
+/////////////////////
+/// QUERY MIDDLEWARE  *runs before any query; 'this' always points to the current query
+
 tourSchema.pre(/^find/, function(next) {
   this.find({ secretTour: { $ne: true } })
   this.start = Date.now()
+  next()
+})
+
+tourSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt'
+  })
   next()
 })
 
@@ -119,7 +169,9 @@ tourSchema.post(/^find/, function(docs, next) {
   next()
 })
 
-// AGGREGATION MIDDLEWARE
+
+///////////////////////////
+/// AGGREGATION MIDDLEWARE
 tourSchema.pre('aggregate', function(next) {
   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } })
   console.log(this.pipeline())

@@ -48,6 +48,9 @@ const userSchema = new mongoose.Schema({
   }
 })
 
+////////////////////////
+/// DOCUMENT MIDDLEWARE  *runs before .save() and .create(); does NOT work with update
+
 userSchema.pre('save', async function(next) {
   // Only run this function if password was actually modified
   if (!this.isModified('password')) return next()
@@ -71,6 +74,9 @@ userSchema.pre(/^find/, function(next) {
   this.find({ active: { $ne: false } })
   next()
 })
+
+/////////////////////////////////
+/// FUNCTIONS FOR AUTHENTICATION
 
 userSchema.methods.correctPassword = async function(
   candidatePassword,
