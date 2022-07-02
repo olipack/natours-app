@@ -90,7 +90,7 @@ const tourSchema = new mongoose.Schema(
     },
     locations: [
       {
-        type:{
+        type: {
           type: String,
           default: 'Point',
           enum: ['Point']
@@ -145,8 +145,6 @@ tourSchema.pre('save', function(next) {
 //   next()
 // })
 
-
-
 /////////////////////
 /// QUERY MIDDLEWARE  *runs before any query; 'this' always points to the current query
 
@@ -168,7 +166,6 @@ tourSchema.post(/^find/, function(docs, next) {
   console.log(`Query took ${Date.now() - this.start} milliseconds!`)
   next()
 })
-
 
 ///////////////////////////
 /// AGGREGATION MIDDLEWARE

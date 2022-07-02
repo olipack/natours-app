@@ -13,15 +13,26 @@ router
   .get(tourController.aliasTopTours, tourController.getAllTours)
 
 router.route('/tour-stats').get(tourController.getTourStats)
-router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan)
+router
+  .route('/monthly-plan/:year')
+  .get(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide', 'guide'),
+    tourController.getMonthlyPlan
+  )
 
 ////////////////////////
 /// Routes without id
 
 router
   .route('/')
-  .get(authController.protect, tourController.getAllTours)
-  .post(tourController.createTour)
+  // get all tours is not protected because we want to expose our tours to everyone
+  .get(tourController.getAllTours)
+  .post(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide'),
+    tourController.createTour
+  )
 
 ////////////////////////
 /// Routes with id
@@ -29,7 +40,11 @@ router
 router
   .route('/:id')
   .get(tourController.getTour)
-  .patch(tourController.updateTour)
+  .patch(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide'),
+    tourController.updateTour
+  )
   .delete(
     authController.protect,
     authController.restrictTo('admin', 'lead-guide'),
